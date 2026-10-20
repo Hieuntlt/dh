@@ -8,18 +8,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>Đồng hồ LCD</title>
 <style>
-:root{--bg:#000;--on:#ff2a1a;--off:#220604;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#000;--on:#ff2a1a;--off:transparent;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0;background:var(--bg);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 body{display:flex;align-items:center;justify-content:center;cursor:pointer}
-#clock{width:min(96vw,300vh);height:auto;display:block}
-.seg{fill:var(--off);transition:none}
+#clock{width:min(98vw,380vh);height:auto;display:block}
+body.p #clock{width:min(96vw,43vh)}
+.seg{fill:var(--off)}
 .seg.on{fill:var(--on);filter:drop-shadow(0 0 3px rgba(255,42,26,.75))}
 .dot{fill:var(--on);filter:drop-shadow(0 0 3px rgba(255,42,26,.75))}
-.dot.off{fill:var(--off);filter:none}
-@media (orientation:portrait){
-  #clock{width:min(92vh,230vw);transform:rotate(90deg)}
-}
 #hint{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center;font:14px/1.2 system-ui,sans-serif;color:#5a1a14;transition:opacity 1s;pointer-events:none}
 #hint.hide{opacity:0}
 </style>
@@ -41,24 +38,40 @@ body{display:flex;align-items:center;justify-content:center;cursor:pointer}
     g:"8,50 12,46 48,46 52,50 48,54 12,54"
   };
   var M=["abcdef","bc","abdeg","abcdg","bcfg","acdfg","acdefg","abc","abcdefg","abcdfg"];
-  var X=[[0,0,1],[72,0,1],[166,0,1],[238,0,1],[326,50,0.5],[362,50,0.5]];
-  var digits=X.map(function(x){
-    var g=document.createElementNS(NS,"g");
-    g.setAttribute("transform","translate("+x[0]+","+x[1]+") scale("+x[2]+")");
-    var segs={};
+  var LAND={vb:"0 0 392 100",pos:[[0,0,1],[72,0,1],[166,0,1],[238,0,1],[326,50,.5],[362,50,.5]]};
+  var PORT={vb:"0 0 132 290",pos:[[0,0,1],[72,0,1],[0,120,1],[72,120,1],[66,240,.5],[102,240,.5]]};
+  var groups=[],digits=[];
+  for(var n=0;n<6;n++){
+    var g=document.createElementNS(NS,"g"),segs={};
     "abcdefg".split("").forEach(function(k){
       var p=document.createElementNS(NS,"polygon");
       p.setAttribute("points",P[k]);p.setAttribute("class","seg");
       g.appendChild(p);segs[k]=p;
     });
-    svg.appendChild(g);return segs;
-  });
+    svg.appendChild(g);groups.push(g);digits.push(segs);
+  }
+  var dots=[];
   [[149,28,10],[149,62,10],[312,64,5],[312,81,5]].forEach(function(q){
     var r=document.createElementNS(NS,"rect");
     r.setAttribute("x",q[0]-q[2]/2);r.setAttribute("y",q[1]);
     r.setAttribute("width",q[2]);r.setAttribute("height",q[2]);
-    r.setAttribute("class","dot");svg.appendChild(r);
+    r.setAttribute("class","dot");svg.appendChild(r);dots.push(r);
   });
+  function layout(){
+    var port=window.innerHeight>window.innerWidth;
+    var L=port?PORT:LAND;
+    document.body.className=port?"p":"";
+    svg.setAttribute("viewBox",L.vb);
+    groups.forEach(function(g,i){
+      var q=L.pos[i];
+      g.setAttribute("transform","translate("+q[0]+","+q[1]+") scale("+q[2]+")");
+    });
+    dots.forEach(function(r){r.style.display=port?"none":""});
+  }
+  layout();
+  window.addEventListener("resize",layout);
+  window.addEventListener("orientationchange",layout);
+
   var prev=[];
   function draw(){
     var d=new Date();
